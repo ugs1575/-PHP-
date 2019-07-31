@@ -1,0 +1,25 @@
+@charset "UTF-8";
+
+div {
+	width: 60%;
+	margin: auto;
+	padding: 2%;
+}
+
+p {
+	float: right;
+}
+
+#body {
+	padding: 2%;
+}
+
+#bottom {
+	text-align: center;
+	padding: 1%;
+}
+
+form{
+	display: inline-block;
+}
+

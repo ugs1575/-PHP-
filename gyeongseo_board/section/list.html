@@ -1,0 +1,152 @@
+<?php
+	require_once '../class/list.php';	
+	
+	/* 검색하지 않았을 경우  */
+	$url = "read.html?no=";
+	
+	/* 만약, 검색한 후 리스트페이지를 불러올 경우 카데고리와 검색 단어를 가져옴 */
+	if(isset($_GET["category"]) && isset($_GET["word"])){
+	    $category = $_GET["category"];
+	    $word = $_GET["word"];
+	    $url = "read.html?category=".$category."&word=".$word."&no=";
+	}
+	 
+?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link rel="stylesheet" href="/gyeongseo_board/css/list.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+	<link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
+	<script type = "text/javascript" src = "../js/common.js" ></script>
+</head>
+<body>
+<div id="search">
+    <form id="searchForm" action="list.html" method="get">
+        <select name="category">
+        	<option value="title" selected>제목</option>
+            <!-- 검색 후, 검색 결과 페이지에서도 값 유지하기 -->
+        	<option value="writer" 
+        	<?php if(isset($_GET['category']) && isset($_GET['word']) && $category=='writer'){
+        	    echo 'selected';
+        	}?>>작성자</option>
+        	<option value="text"
+        	<?php if(isset($_GET['category']) && isset($_GET['word']) && $category=='text'){
+        	    echo 'selected';
+        	}?>>내용</option>
+        </select>
+    	<input type="text" name="word" size="40" required="required" 
+    	<?php if(isset($_GET['word'])){
+    	    echo 'value="'.$word.'"';}?>/>
+    	<input type="submit" value="검색"/>
+	</form>
+    	<button class="btn btn-light" onclick="location.href='list.html'">전체 목록</button>
+</div>
+<div id="top">
+	<table>
+		<tr>
+			<th>No</th>
+			<th>글제목</th>
+			<th>작성</th>
+			<th>조회수</th>
+			<th>등록일</th>
+		</tr>
+		<?php 
+		for($i = 0; $i < $total_record; $i++){
+		      mysqli_data_seek($result, $i);
+		      $row = mysqli_fetch_array($result);
+		      if($row==false) break;
+		      
+		      //포함된 파일 갯수 세기
+		      $sql_img = "select count(*) from img where no=".$row["no"];
+		      $result_img = mysqli_query($dbconnect,$sql_img) or die("sql 에러");
+		      mysqli_data_seek($result_img, 0);
+		      $row2 = mysqli_fetch_array($result_img);
+		      //총 파일 갯수
+		      $total_img = $row2[0];
+		?>
+		<tr>
+			<td class="no"><?= $row["no"]?></td> <!-- 순번 -->
+			
+			<td class="title"><!-- 제목 -->
+			
+			<!-- 답글 깊이 만큼 경우 들여쓰기와 답글 아이콘 표시 -->
+			<?php 
+			if($row["depth"]!=0){
+    			for($d = 0; $d < $row["depth"]; $d++){
+    			     echo "&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp";
+    			}    
+			?>
+			<i class='fas fa-reply' style='font-size:24px'></i>
+			<?php }?>
+			<a href=<?=$url.$row["no"]?>><?= $row["title"]?></a>
+			
+			<!-- 글 안에 이미지가 존재할 경우 이미지 아이콘 표시 -->
+			<?php if($total_img>0){?>
+			<i class='far fa-image' style='font-size:24px'></i>
+			<?php }?></td> 
+			
+			<td class="writer"><?= $row["writer"]?></td> <!-- 작성자 -->
+			<td class="hits"><?= $row["hits"]?></td> <!-- 조회수 -->
+			<td class="reg_date"><?= $row["reg_date"]?></td> <!-- 등록일 -->
+		</tr>
+		<?php 
+		
+		}?>
+	</table>
+</div>
+<div id="bottom">
+	<form action="create.html" method="get">
+		<input type="hidden" name="function"  value="create">
+		<input type="submit" class="btn btn-light" value="글쓰기">
+	</form>
+</div>
+
+<!-- 페이징 -->
+<div id="paging">
+	<ul class="pagination justify-content-center">
+    <?php
+    //전체 페이지 수
+    $total_page = ceil($total_record/$record_per_page);
+    
+    //전체 블럭 수
+    $total_block = ceil($total_page/$page_per_block);
+    
+    //현재 블럭이 1보다 클 경우
+    if(1 < $now_block){
+        $pre_page = ($now_block - 1)* $page_per_block;
+        echo '<li class="page-item"><a class="page-link" href="list.html?page='.$pre_page.'">이전</a></li>';  
+    }
+    
+    $start_page = ($now_block - 1) * $page_per_block +1;
+    $end_page = $now_block * $page_per_block;
+    
+    
+    //총 페이지와 마지막 페이지를 같게 하기, 즉 글이 있는 페이지 까지만 설정
+    if($end_page > $total_page){
+        $end_page = $total_page;
+    }
+    
+    
+    for($i = $start_page; $i<=$end_page; $i++){
+        if(isset($_GET['category']) && isset($_GET['word'])){
+           
+        ?>
+    	<li class="page-item"><a class="page-link" href="list.html?category=<?=$category?>&word=<?=$word?>&page=<?= $i ?>"><?=$i ?></a></li>
+    <?php } else{?>
+    	<li class="page-item"><a class="page-link" href="list.html?page=<?= $i ?>"><?=$i ?></a></li>
+    <?php }
+    }
+    
+    //현재 블럭이 총 블럭 수 보다 작을 경우
+    if($now_block < $total_block){
+        $post_page = $now_block * $page_per_block + 1;
+        echo '<li class="page-item"><a class="page-link" href="list.html?page='.$post_page.'">다음</a></li>';
+    }
+    ?>
+    </ul>
+</div>
+
+</body>
+</html>

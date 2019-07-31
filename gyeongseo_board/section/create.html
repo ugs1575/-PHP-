@@ -1,0 +1,243 @@
+<?php
+    require_once '../class/DB_Connection.php';
+    
+    /* create폼, reply폼, update폼을 구별해주기 위해  function을 가져옴 */
+    $function = $_GET["function"];
+    
+    
+    //변수선언
+    $title="";
+    $writer="";
+    $text="";
+    $password="";
+    $button="등록하기";
+    
+    /* 답변 등록폼일 경우 부모글의 grpno, depth, grpord 가져오기*/
+    if($function=='reply'){
+        $button='답글 등록하기';
+        $no = $_GET["no"];
+        $grpno = $_GET["grpno"];
+        $depth = $_GET["depth"];
+        $grpord = $_GET["grpord"];
+    }
+    
+    /* 만약, 수정폼일 경우 기존에 등록되었던 값들을 불러와 폼에 보여지도록 함 */
+    if($function=='update'){
+        $button="수정하기";
+        $no = $_GET["no"];
+        $sql = "select no, title, writer, text, password from board where no = ".$no;
+        $result = mysqli_query($dbconnect, $sql) or die("SQL 에러1");
+        $row = mysqli_fetch_array($result);
+        $title = $row["title"];
+        $writer = $row["writer"];
+        $text = $row["text"];
+        $password = $row["password"];
+        
+        //포함된 파일 갯수 세기
+        $sql_numOfimg = "select count(*) from img where no=".$row["no"];
+        $result_numOfimg = mysqli_query($dbconnect,$sql_numOfimg) or die("sql 에러2");
+        mysqli_data_seek($result_numOfimg, 0);
+        $row_numOfimg = mysqli_fetch_array($result_numOfimg);
+        //총 파일 갯수
+        $total_img = $row_numOfimg[0];
+    }
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link rel="stylesheet" href="/gyeongseo_board/css/create.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  	<script type = "text/javascript" src = "../js/common.js" ></script>
+  	<script src="//ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+</head>
+
+<body>
+<!-- input창에 값이 없는데 등록할 경우 경고창 -->
+<script type="text/javascript">
+	window.onload = function(){ noFileCheck();}
+
+	function inputCheck(f){
+    	
+    	if(f.title.value=="") {
+    		alert("제목을 입력해주세요");
+    		return false;
+    	} else if (f.writer.value=="") {
+    		alert("작성자 이름을 입력해주세요");
+    		return false;
+    	} else if(f.text.value=="") {
+    		alert("글내용을 입력해주세요");
+    		return false;
+    	} else if(f.password.value=="") {
+    		alert("비밀번호를 입력해주세요");
+    	 	return false;
+    	}	
+    	
+    }
+
+	
+   function addFile(){
+      	//만약, 등록된 파일이 없고, "파일 없습니다" 가 표시되어 있으면 input-file type 으로 바꿔줌 
+    	var file = $(":file").length;
+    	var img = $("img").length;
+    	if(file+img==0){
+        	$("#noFile").html('<input type="file" name="fname[]" accept=".jpg,.png,.gif">'
+				  +'<input type="button" class="btn btn-light" value="-" onclick="delFile(this)">');
+			  		
+    	}else if(file+img>0){
+    		$("#createForm > tbody").append('<tr><td><input type="file" name="fname[]" accept=".jpg,.png,.gif"><input type="button" class="btn btn-light" value="-" onclick="delFile(this)"></td></tr>');
+        }
+    	rowSpan();
+        
+    }
+   
+ 	var str = "";
+ 	//첫번째 cell이면 cell만 삭제 그렇지 않으면 row가 삭제됨
+    function delFile(button){
+    	//이미지 sno 생성
+		var imgSno = $(button).next().val();
+		if(imgSno!=undefined){	
+        	str += imgSno+",";
+       	 	$("#imgSno").val(str);
+		}
+
+        var row_id = $(button).closest("tr").attr("id");  
+             
+    	//첫번째cell인경우 
+        if (row_id == "file_first_row"){
+			//셀을 지우고
+            $("#file_first_row").find("td").remove();
+            //밑 행을 위로 옮겨줌
+            $("#file_first_row").next().children().insertAfter("#file_head");
+            $("#file_first_row").next().remove();
+            
+        //첫번째cell이 아닌 경우
+        }else{
+          	//마지막 셀 밑으로 -버튼 누를때마다 셀 삭제하기
+            var i = $(button).closest("tr").remove();
+        }
+
+		//rowspan 변경
+        rowSpan();
+
+		
+    }
+
+    //파일이 없으면 파일이 존재 하지 않는다 표시해주기
+    function noFileCheck(){
+    	var file = $(":file").length;
+    	var img = $("img").length;
+    	if(file==0&&img==0){
+        	$("#file_first_row").append("<td id='noFile'>파일이 없습니다.</td>");
+    		$("#file_head").attr("rowspan",1);
+    	}
+		
+	}
+
+	function rowSpan(){
+		//rowspan변경
+		var file = $(":file").length;
+    	var img = $("img").length;
+        var rowSpan = $("#file_head").attr("rowspan");
+        $("#file_head").attr("rowspan",file+img);
+        noFileCheck();
+	}
+  
+
+	</script>
+
+	<?php 
+    if($function=="update"){
+        $url = "../class/update.php";
+    }else if($function=="reply"){
+        $url = "../class/reply.php";
+    }else{
+        $url = "../class/create.php";
+    }
+    ?>
+    
+    
+    <form action=<?=$url ?> method="post" enctype="multipart/form-data" onsubmit="return inputCheck(this);">
+		<input type="hidden" name="no" value="<?=$no?>">
+		<input type="hidden" name="grpno" value="<?=$grpno?>">
+		<input type="hidden" name="depth" value="<?=$depth?>">
+		<input type="hidden" name="grpord" value="<?=$grpord?>">
+    	
+    	<div id="top">
+    		<table id="createForm">
+    			<tr>
+    				<th>글제목</th>
+    				<td><input type="text" name="title" maxlength="20" size="40" value="<?=$title?>"> </td>
+
+    			</tr>
+    			<tr>
+    				<th>작성자</th>
+    				<td><input type="text" name="writer" maxlength="20" size="40" value="<?=$writer?>"></td>
+    				
+    			</tr>
+    			<tr>
+    				<th>글내용</th>
+    				<td><textarea rows="8" cols="50" maxlength="200" name="text" ><?=$text?></textarea></td>
+    			</tr>
+    			
+    			<tr>
+    				<th>비밀번호</th>
+    				<td><input type="password" maxlength="4" name="password" value="<?=$password ?>"></td>
+    			</tr>
+    			
+    			<tr id="file_first_row">
+    				<?php if($function=="create"||$function=="reply"){?>
+    				<th id="file_head">파일<br> (.jpg / .png /.gif 파일만 올려주세요 )<br>
+    				<input type="button" class="btn btn-light" value="추가 등록" onclick="addFile()">
+    				</th>
+    				<td>
+    					<input type="file" name="fname[]" accept=".jpg,.png,.gif">
+    					<input type="button" class="btn btn-light" value="-" onclick="delFile(this)"> 
+    				</td>
+    				<?php }else{?>
+    	
+    	<!-- update일때 -->
+    				<input type="hidden" id="imgSno" name="imgSno" value=""> 
+    				<th id="file_head" rowspan="<?=$total_img?>">
+    					등록된 파일<br>
+    					<input type="button" class="btn btn-light" value="추가 등록" onclick="addFile()">
+    				</th>
+    				<?php 
+    				    //이미지 가져오기
+    				    $order = 0;
+				        $sql_getImg = "select imgNo, imgName from img where no=".$row["no"];
+				        $result_getImg = mysqli_query($dbconnect, $sql_getImg) or die("SQL 에러3");
+				        if ($result_getImg) {
+				            while($row_getImg = mysqli_fetch_array($result_getImg)) {
+				                if($row_getImg["imgName"]!=''){
+    				                if($order==0){
+    				                    $order++;    
+    				?>
+    				<td>  
+    					<img src="../upload/<?=$row_getImg["imgName"] ?>" height="50%" width="50%">
+						<input type="button" class="btn btn-light" value="삭제" onclick="delFile(this)">  
+						<input type="hidden" value="<?=$row_getImg["imgNo"] ?>">  
+    				</td>
+					<?php }else{?>
+    				<tr>
+        				<td>
+        					<img name="img" src="../upload/<?=$row_getImg["imgName"] ?>" height="50%" width="50%" >
+        					<input type="button" class="btn btn-light" value="삭제" onclick="delFile(this)">
+        					<input type="hidden" value="<?=$row_getImg["imgNo"] ?>"> 
+        				</td>
+        			</tr>
+    				<?php }}}}}?>
+    			</tr>
+    		</table>
+   	</div>
+    <div id="bottom">
+    	<!-- 만약, 수정모드일 경우 수정하기 버튼, 등록모드일 경우 등록하기 버튼 -->
+		<input type="submit" class="btn btn-light" value="<?=$button ?>">
+		<input type="button" class="btn btn-light" onclick="location.href='list.html'" value="취소하기">
+	</div>
+	</form>
+	
+
+</body>
+</html>

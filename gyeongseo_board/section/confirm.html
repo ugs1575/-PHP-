@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link rel="stylesheet" href="/gyeongseo_board/css/password.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  	<script type = "text/javascript" src = "../js/common.js" ></script>
+</head>
+<body>
+	<div>
+	<form action="../class/delete.php" method="get">
+		<input type="hidden" name="no" value="<?=$_GET["no"]?>">
+		<p>해당글의 답글이 존재합니다. 삭제하시면 답변도 함께 삭제됩니다.</p>
+		<p> 그래도 삭제하시겠습니까 ?</p>
+		
+		<div id="bottom">
+    	<input type="submit" class="btn btn-light" value="삭제">
+    	<input type="button" class="btn btn-light" onclick="location.href='list.html'" value="취소하기">
+    	</div>
+    	
+	</form>
+    </div>
+</body>
+</html>

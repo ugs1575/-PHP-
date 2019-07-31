@@ -1,0 +1,138 @@
+<?php
+	require_once '../class/imageList.php';		
+?>
+
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+
+<body class="w3-light-grey w3-content" style="max-width:1600px">
+
+<?php
+    //이미지 인덱스 끝범위
+    $max = 3;
+    //이미지 시작 끝범위
+    $start = 0;
+    //이미지가 다 불러왔을 경우 for문을 나가기 위해 쓰는 변수
+    $stop = false;
+    
+    //행의 갯수 구하기
+    $row = floor($total_record2/3);
+    //만약, 총 레코드가 3으로 나누어 떨어지지 않을 경우 행을 하나 더 늘려줌
+    $nmg = $total_record2%3;
+    if($nmg!=0){
+        $row ++;    
+    }
+    
+    for($r = 0; $r < $row; $r++){
+?>
+        <div class="w3-row-padding">
+<?php
+        for($img = $start; $img < $max; $img++){
+            mysqli_data_seek($result, $img);
+            $data = mysqli_fetch_array($result);
+            
+            $img_src = "";
+            if($data["repreImg"]==='noImg.png'){
+                $img_src = "../img/noImg.png";
+            }else{
+                $img_src = "../upload/".$data["repreImg"];
+            }
+            ?>
+		 	<div class="w3-third w3-container w3-margin-bottom">
+		 		<img src=<?=$img_src ?> width=100% height=300px class="w3-hover-opacity">
+  	 			<div class="w3-container w3-white">
+    				<p>No : <?=$data["no"]?> <b><?=$data["title"] ?></b></p>
+    			</div>
+        	</div>
+          
+<?php	    
+            //만약, 인덱스가 마지막 인덱스일 경우 stop
+            if($img==($total_record2-1)){
+                $stop=true;
+                break;
+            }
+        }
+        
+        
+        if($stop==true){
+?>
+		</div>
+<?php
+            break;
+        }else{
+            //행이 하나 끝날 때마다 인덱스 시작범위와 끝범위를 늘려줌
+            $max+=3;
+            $start = $max-3;
+            if($max > $total_record){
+                $max = $total_record;
+            }
+?>
+			</div>
+	 
+<?php    
+        }
+    }
+        
+    
+
+?>
+
+ 
+</body>
+
+<div id="bottom">
+	<form action="imageCreate.html" method="get">
+		<input type="submit" class="btn btn-light" value="글쓰기">
+	</form>
+</div>
+
+<!-- 페이징 -->
+<div id="paging">
+	<ul class="pagination justify-content-center">
+    <?php
+    //전체 페이지 수
+    $total_page = ceil($total_record/$record_per_page);
+    
+    //전체 블럭 수
+    $total_block = ceil($total_page/$page_per_block);
+    
+    //현재 블럭이 1보다 클 경우
+    if(1 < $now_block){
+        $pre_page = ($now_block - 1)* $page_per_block;
+        echo '<li class="page-item"><a class="page-link" href="list.html?page='.$pre_page.'">이전</a></li>';  
+    }
+    
+    $start_page = ($now_block - 1) * $page_per_block +1;
+    $end_page = $now_block * $page_per_block;
+    
+    
+    //총 페이지와 마지막 페이지를 같게 하기, 즉 글이 있는 페이지 까지만 설정
+    if($end_page > $total_page){
+        $end_page = $total_page;
+    }
+    
+    
+    for($i = $start_page; $i<=$end_page; $i++){
+?>
+    	<li class="page-item"><a class="page-link" href="imageList.html?page=<?= $i ?>"><?=$i ?></a></li>
+    <?php }
+
+    
+    //현재 블럭이 총 블럭 수 보다 작을 경우
+    if($now_block < $total_block){
+        $post_page = $now_block * $page_per_block + 1;
+        echo '<li class="page-item"><a class="page-link" href="imageList.html?page='.$post_page.'">다음</a></li>';
+    }
+    ?>
+    </ul>
+</div>
+
+</html>

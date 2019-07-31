@@ -1,0 +1,70 @@
+<?php 
+require_once '../class/read.php';
+
+$url = "list.html";
+
+if(isset($_GET["category"]) && isset($_GET["word"])){
+    $category = $_GET["category"];
+    $word = $_GET["word"];
+    $url = "list.html?category=".$category."&word=".$word;
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<link rel="stylesheet" href="/gyeongseo_board/css/read.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  	<script type = "text/javascript" src = "../js/common.js" ></script>
+</head>
+<body>
+
+<div id="top">
+	<h2><?= $row["title"]?></h2>
+	<hr>
+	<!--조회수 | 작성자  작성일 -->
+	<p><?=$row["hits"]?>  |  <?=$row["writer"]?>  <?=$row["reg_date"]?></p>
+</div>
+
+<div id="body">
+	<?php
+	  echo $row["text"]."<br/>\n";
+	  
+	  //파일 불러오기
+	  $sql_getImg = "select imgNo, imgName from img where no=".$row["no"];
+	  $result_getImg = mysqli_query($dbconnect, $sql_getImg) or die("SQL 에러3");
+	  if ($result_getImg) {
+	      while($row_getImg = mysqli_fetch_array($result_getImg)) {
+	          if($row_getImg["imgName"]!=''){
+	?>
+	<img src="../upload/<?=$row_getImg["imgName"] ?>" height="30%" width="30%">
+	      
+	 <?php }
+	  }} ?> 
+</div>
+
+<div id="bottom">
+	<form action="password.html" method="post">
+		<input type="hidden" name="function" value="update">
+		<input type="hidden" name="no" value="<?=$row["no"]?>">
+		<input type="submit" class="btn btn-light" value="수정하기">
+	</form>
+	<form action="password.html" method="post">
+		<input type="hidden" name="function" value="delete">
+		<input type="hidden" name="no" value="<?=$row["no"]?>">
+		<input type="submit" class="btn btn-light" value="삭제하기">
+	</form>
+	<form action="create.html" method="get">
+		<input type="hidden" name="function" value="reply">
+		<input type="hidden" name="no" value="<?=$row["no"]?>">
+		<input type="hidden" name="grpno" value="<?=$row["grpno"]?>">
+		<input type="hidden" name="depth" value="<?=$row["depth"]?>">
+		<input type="hidden" name="grpord" value="<?=$row["grpord"]?>">
+		<input type="submit" class="btn btn-light" value="답글">
+	</form>
+    
+	<input type="button" class="btn btn-light" onclick="location.href='<?=$url ?>'" value="목록">
+</div>
+
+</body>
+</html>
